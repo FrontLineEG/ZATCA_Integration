@@ -41,6 +41,17 @@ def generate_einvoice(doc, submit_now=True):
     if not company.custom_enable_zatca_e_invoicing and not doc.custom_is_zatca_test:
         return
 
+    # Check if Company is a Saudi Arabia based company
+    if company.country != "Saudi Arabia":
+        return
+
+    # Phase 1 needs no CSID or signing; its QR code is created on submit by phase_one_utils
+    if (
+        company.custom_enable_zatca_e_invoicing
+        and not company.custom_zatca_phase == "ZATCA Phase 2"
+    ):
+        return
+
     if doc.custom_is_zatca_test:
         config = get_zatca_config_test(company, compliance_csid_doc)
     else:
@@ -76,16 +87,6 @@ def generate_einvoice(doc, submit_now=True):
 
     invoice_data = _prepare_invoice_data(doc, config)
 
-    # Check if Company is a Saudi Arabia based company
-    if company.country != "Saudi Arabia":
-        return
-
-    # Check if the active Zacta Phase is Phase 2
-    if (
-        company.custom_enable_zatca_e_invoicing
-        and not company.custom_zatca_phase == "ZATCA Phase 2"
-    ):
-        return
     invoice_xml = decode_invoice(payload.get("invoice"))
     _save_invoice_xml(doc, invoice_xml)
 
